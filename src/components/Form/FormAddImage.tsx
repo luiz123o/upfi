@@ -11,10 +11,10 @@ interface FormAddImageProps {
   closeModal: () => void;
 }
 
-interface CreateImageData {
-  url: string,
-  title: string
-  description: string
+interface NewImageData {
+  url: string;
+  title: string;
+  description: string;
 }
 
 export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
@@ -22,7 +22,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
   const [localImageUrl, setLocalImageUrl] = useState('');
   const toast = useToast();
 
-  const regexInputImageAcceptedFormats =
+  const acceptedFormatsRegex =
     /(?:([^:/?#]+):)?(?:([^/?#]*))?([^?#](?:jpeg|gif|png))(?:\?([^#]*))?(?:#(.*))?/g;
 
   const formValidations = {
@@ -32,7 +32,7 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
         lessThan10MB: fileList =>
           fileList[0].size < 10000000 || 'O arquivo deve ser menor que 10MB',
         acceptedFormats: fileList =>
-          regexInputImageAcceptedFormats.test(fileList[0].type) ||
+          acceptedFormatsRegex.test(fileList[0].type) ||
           'Somente são aceitos arquivos PNG, JPEG e GIF',
       },
     },
@@ -58,52 +58,51 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
 
   const queryClient = useQueryClient();
   const mutation = useMutation(
-    async (image: CreateImageData) => {
-      await api.post('api/images', {
+    async (image: NewImageData) => {
+      await api.post('/api/images', {
         ...image,
-        url: imageUrl
-      })
+        url: imageUrl,
+      });
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('images')
-      }
+        queryClient.invalidateQueries('images');
+      },
     }
   );
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState,
-    setError,
-    trigger,
-  } = useForm();
+  const { register, handleSubmit, reset, formState, setError, trigger } =
+    useForm();
   const { errors } = formState;
 
-  const onSubmit = async (data: CreateImageData): Promise<void> => {
+  const onSubmit = async (data: NewImageData): Promise<void> => {
     try {
-
-      await mutation.mutateAsync(data)
-
+      if (!imageUrl) {
+        toast({
+          status: 'error',
+          title: 'Imagem não adicionada',
+          description:
+            'É preciso adicionar e aguardar o upload de uma imagem antes de realizar o cadastro.',
+        });
+        return;
+      }
+      await mutation.mutateAsync(data);
       toast({
         title: 'Imagem cadastrada',
         description: 'Sua imagem foi cadastrada com sucesso.',
         status: 'success',
-      })
-
-      return
+      });
     } catch {
       toast({
         title: 'Falha no cadastro',
         description: 'Ocorreu um erro ao tentar cadastrar a sua imagem.',
         status: 'error',
-      })
+      });
     } finally {
       reset();
-      setLocalImageUrl('')
-      setImageUrl('')
-      closeModal()
+      setImageUrl('');
+      setLocalImageUrl('');
+      closeModal();
     }
   };
 
@@ -116,21 +115,19 @@ export function FormAddImage({ closeModal }: FormAddImageProps): JSX.Element {
           setLocalImageUrl={setLocalImageUrl}
           setError={setError}
           trigger={trigger}
-          name="file"
           {...register('image', formValidations.image)}
+          error={errors.image}
         />
 
         <TextInput
           placeholder="Título da imagem..."
-          name="title"
-          {...register("title", formValidations.title)}
+          {...register('title', formValidations.title)}
           error={errors.title}
         />
 
         <TextInput
           placeholder="Descrição da imagem..."
-          name="description"
-          {...register("description", formValidations.description)}
+          {...register('description', formValidations.description)}
           error={errors.description}
         />
       </Stack>

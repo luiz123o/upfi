@@ -6,7 +6,7 @@ import {
   Skeleton,
   SkeletonText,
 } from '@chakra-ui/react';
-import { useState, forwardRef, ForwardRefRenderFunction } from 'react';
+import { useState } from 'react';
 
 interface Card {
   title: string;
@@ -20,11 +20,11 @@ interface CardProps {
   viewImage: (url: string) => void;
 }
 
-const CardBase: ForwardRefRenderFunction<HTMLDivElement,CardProps> = ({ data, viewImage },ref) => {
-  const [isLoading, setIsLoading] = useState(false);
+export function Card({ data, viewImage }: CardProps): JSX.Element {
+  const [isLoading, setIsLoading] = useState(true);
 
   return (
-    <Box key={data.ts} borderRadius="md" bgColor="pGray.800" ref={ref}>
+    <Box key={data.ts} borderRadius="md" bgColor="pGray.800">
       <Skeleton isLoaded={!isLoading}>
         <Image
           src={data.url}
@@ -57,5 +57,3 @@ const CardBase: ForwardRefRenderFunction<HTMLDivElement,CardProps> = ({ data, vi
     </Box>
   );
 }
-
-export const Card = forwardRef(CardBase)
